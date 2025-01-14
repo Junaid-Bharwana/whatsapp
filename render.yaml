@@ -2,8 +2,9 @@ services:
   - type: web
     name: whatsapp-bot
     env: docker
+    plan: free
     buildCommand: docker build -t whatsapp-bot .
-    startCommand: docker run -p $PORT:3000 whatsapp-bot
+    startCommand: docker run -p $PORT:3000 -e PORT=$PORT whatsapp-bot
     envVars:
       - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
         value: "true"
@@ -11,7 +12,11 @@ services:
         value: "/usr/bin/chromium"
     healthCheckPath: /health
     autoDeploy: true
-    plan: free
     branch: main
     numInstances: 1
-    healthCheckTimeout: 100
+    regions:
+      - singapore
+    disk:
+      name: whatsapp-session
+      mountPath: /app/.wwebjs_auth
+      sizeGB: 1

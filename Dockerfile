@@ -46,6 +46,9 @@ RUN apt-get update && apt-get install -y \
 # Create working directory
 WORKDIR /app
 
+# Create directory for persistent storage
+RUN mkdir -p /app/.wwebjs_auth
+
 # Copy package files
 COPY package*.json ./
 

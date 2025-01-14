@@ -42,6 +42,14 @@ const clients = new Set();
 // WebSocket connection handler
 wss.on('connection', (ws) => {
     clients.add(ws);
+    
+    // Send current state to new client
+    if (client.info) {
+        ws.send(JSON.stringify({
+            type: 'ready',
+            number: client.info.wid.user
+        }));
+    }
 
     ws.on('close', () => {
         clients.delete(ws);

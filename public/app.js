@@ -72,8 +72,24 @@ function showQRCode(qrData) {
     connectedInfo.classList.add('hidden');
     const qrCode = document.getElementById('qr-code');
     qrCode.innerHTML = '';
-    QRCode.toCanvas(qrCode, qrData, { width: 200 }, (error) => {
-        if (error) console.error(error);
+    
+    // Create canvas element
+    const canvas = document.createElement('canvas');
+    qrCode.appendChild(canvas);
+    
+    // Generate QR code
+    QRCode.toCanvas(canvas, qrData, { 
+        width: 256,
+        margin: 4,
+        color: {
+            dark: '#000000',
+            light: '#ffffff'
+        }
+    }, (error) => {
+        if (error) {
+            console.error('Error generating QR code:', error);
+            qrCode.innerHTML = '<p class="text-red-500">Error generating QR code. Please refresh the page.</p>';
+        }
     });
 }
 
