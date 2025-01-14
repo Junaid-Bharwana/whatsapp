@@ -1,9 +1,19 @@
-const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
+const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
+const WebSocket = require('ws');
+const http = require('http');
+const path = require('path');
 const moment = require('moment');
+
 const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 const port = process.env.PORT || 3000;
+
+// Serve static files
+app.use(express.static('public'));
+app.use(express.json());
 
 // Initialize WhatsApp client
 const client = new Client({
@@ -26,30 +36,57 @@ const client = new Client({
     }
 });
 
-// Generate QR Code
-client.on('qr', (qr) => {
-    console.log('QR RECEIVED');
-    qrcode.generate(qr, {small: true});
+// Store connected clients
+const clients = new Set();
+
+// WebSocket connection handler
+wss.on('connection', (ws) => {
+    clients.add(ws);
+
+    ws.on('close', () => {
+        clients.delete(ws);
+    });
 });
 
-// Ready event
+// Broadcast to all connected clients
+function broadcast(message) {
+    clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(message));
+        }
+    });
+}
+
+// WhatsApp Events
+client.on('qr', (qr) => {
+    console.log('=================QR CODE=================');
+    console.log('Scan this QR code in WhatsApp to start bot');
+    qrcode.generate(qr, {small: true});
+    console.log('=======================================');
+    // Also log the QR code string for backup
+    console.log('QR Code String:', qr);
+    broadcast({ type: 'qr', qr });
+});
+
 client.on('ready', () => {
     console.log('Client is ready!');
+    broadcast({ 
+        type: 'ready',
+        number: client.info.wid.user
+    });
 });
 
-// Authentication event
 client.on('authenticated', () => {
     console.log('AUTHENTICATED');
 });
 
-// Authentication failure event
 client.on('auth_failure', msg => {
     console.error('AUTHENTICATION FAILURE', msg);
 });
 
-// Disconnected event
 client.on('disconnected', (reason) => {
     console.log('Client was disconnected', reason);
+    broadcast({ type: 'disconnected' });
 });
 
 // Message event
@@ -92,12 +129,36 @@ Platform: ${process.platform}`);
     }
 });
 
-// Initialize WhatsApp client
-client.initialize();
+// Message Routes
+app.post('/send-message', async (req, res) => {
+    try {
+        const { phone, message } = req.body;
+        
+        // Format phone number
+        const formattedPhone = phone.replace(/[^\d]/g, '') + '@c.us';
+        
+        // Send message
+        await client.sendMessage(formattedPhone, message);
+        
+        // Broadcast to WebSocket clients
+        broadcast({
+            type: 'message',
+            message: {
+                to: phone,
+                content: message
+            }
+        });
 
-// Basic web server
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error sending message:', error);
+        res.json({ success: false, error: error.message });
+    }
+});
+
+// Serve the main page
 app.get('/', (req, res) => {
-    res.send('WhatsApp Bot is running!');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Health check endpoint
@@ -105,6 +166,10 @@ app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
-app.listen(port, () => {
+// Initialize WhatsApp client
+client.initialize();
+
+// Start server
+server.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });

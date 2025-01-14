@@ -1,0 +1,63 @@
+/* Custom Styles */
+.status-connected {
+    background-color: #10B981;
+    color: white;
+}
+
+.status-disconnected {
+    background-color: #EF4444;
+    color: white;
+}
+
+.status-waiting {
+    background-color: #F59E0B;
+    color: white;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+/* Toast Animation */
+@keyframes slideIn {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+#toast.show {
+    display: block;
+    animation: slideIn 0.3s ease-out;
+}
+
+/* QR Code Container */
+#qr-code {
+    padding: 1rem;
+    background: white;
+    border-radius: 0.5rem;
+    display: inline-block;
+    margin: 1rem 0;
+}
+
+/* Recent Messages */
+.message-item {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: #F3F4F6;
+    margin-bottom: 0.5rem;
+}
+
+.message-item:hover {
+    background-color: #E5E7EB;
+}
+
+/* Form Improvements */
+input:focus, textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
